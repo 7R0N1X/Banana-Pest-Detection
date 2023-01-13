@@ -4,71 +4,85 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     # Carga dos listas de imágenes, una con imágenes infectadas y otra con imágenes sanas.
     creamidia_viridis = [f'dataset/pests/ceramidia-viridis/{img}' for img in os.listdir('dataset/pests/ceramidia-viridis')]
     healthy_leaves = [f'dataset/pests/healthy-leaves/{img}' for img in os.listdir('dataset/pests/healthy-leaves')]
 
+    # Inicializar listas vacías para almacenar imágenes infectadas y sanas.
     infected_images = []
     healthy_images = []
-    # print('************************* {} *************************'.format('Infected Images'))
+    # Recorre cada archivo de imagen en la lista de creamidia_viridis.
     for image_file in creamidia_viridis:
+        # Lee la imagen del archivo.
         image = cv2.imread(image_file)
+        # Agrega la imagen a la lista de imágenes infectadas.
         infected_images.append(image)
-        # print(image_file)
-    # print('************************* {} *************************'.format('Healthy Images'))
+    # Recorre cada archivo de imagen en la lista de healthy_leaves.
     for image_file in healthy_leaves:
+        # Lee la imagen del archivo.
         image = cv2.imread(image_file)
+        # Agrega la imagen a la lista de imágenes sanas.
         healthy_images.append(image)
-        # print(image_file)
     print('************************* {} *************************'.format('Total de imágenes cargadas'))
     print(f'Imágenes infectadas: {len(infected_images)}')
     print(f'Imágenes sanas: {len(healthy_images)}')
 
     # Redimensiona las imágenes de plantas infectadas y sanas a un tamaño de 128x128 píxeles.
     for i in range(len(infected_images)):
-        infected_images[i] = cv2.resize(infected_images[i], (150, 150))
+        infected_images[i] = cv2.resize(infected_images[i], (128, 128))
     for i in range(len(healthy_images)):
-        healthy_images[i] = cv2.resize(healthy_images[i], (150, 150))
+        healthy_images[i] = cv2.resize(healthy_images[i], (128, 128))
 
     # Extrae características de las imágenes de plantas infectadas y sanas.
     def extract_features(img):
-        features = np.empty(0, dtype='i')
-
-        white_bajo = np.array([0, 0, 20], np.uint8)
-        white_alto = np.array([0, 255, 255], np.uint8)
-
-        img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
-        mask_green = cv2.inRange(img_hsv, white_bajo, white_alto)
-        mask_green = cv2.dilate(mask_green, None, iterations=1)
-        mask_green = cv2.erode(mask_green, None, iterations=1)
-
-        cnts, _ = cv2.findContours(mask_green, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Convertir a escala de grises.
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # Aplicar umbral para destacar huecos.
+        _, threshold = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
+        # Encontrar contornos de los huecos.
+        contours, _ = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         counter = 0
-        for c in cnts:
-            area = cv2.contourArea(c)
-            if 20 < area < 5000:
+        # Inicializa arreglo vacio para almacenar las caracteristicas.
+        features = np.empty(0, dtype='i')
+        # Recorre cada contorno encontrado.
+        for cnt in contours:
+            # Calcula el area del contorno.
+            area = cv2.contourArea(cnt)
+            # Verifica si el area del contorno cumple con las condiciones deseadas.
+            if 1 < area < 320:
+                # Si cumple, aumenta el contador.
                 counter += 1
-        features = np.append(features, counter)
+        # Agrega el contador al arreglo de caracteristicas.
+        features = np.append(features, [counter])
+        # Retorna el arreglo de caracteristicas.
         return features
 
+    # Inicializa arreglos vacios para almacenar las caracteristicas y las etiquetas.
     X = np.empty(0, dtype='i')
     Y = np.empty(0, dtype='i')
+    # Recorre cada imagen infectada.
     for image in infected_images:
+        # Extrae caracteristicas de la imagen.
         feature_vector = extract_features(image)
+        # Agrega caracteristicas al arreglo X.
         X = np.append(X, feature_vector)
-        Y = np.append(Y, 1)  # Indica que la imagen es infectada.
+        # Agrega etiqueta 1 al arreglo Y (indica que la imagen es infectada).
+        Y = np.append(Y, 1)
+    # Recorre cada imagen sana.
     for image in healthy_images:
+        # Extrae caracteristicas de la imagen.
         feature_vector = extract_features(image)
+        # Agrega caracteristicas al arreglo X.
         X = np.append(X, feature_vector)
-        Y = np.append(Y, 0)  # Indica que la imagen es sana.
-
-    X = X.reshape(-1, 1)
-    Y = Y.reshape(-1, 1)
+        # Agrega etiqueta 0 al arreglo Y (indica que la imagen es sana).
+        Y = np.append(Y, 0)
 
     # Normaliza los datos de la matriz X.
+    X = X.reshape(-1, 1)
     scaler = StandardScaler()
     X = scaler.fit_transform(X)
 
@@ -84,9 +98,45 @@ if __name__ == '__main__':
     model = RandomForestClassifier(n_estimators=100)
     model.fit(X_train, Y_train)
 
+    # Hacer predicciones en el conjunto de prueba
+    Y_pred = model.predict(X_test)
+
+    # Calcular la matriz de confusión
+    conf_matrix = confusion_matrix(Y_test, Y_pred)
+
+    # Calcular las métricas
+    tp = conf_matrix[0][0]
+    fp = conf_matrix[0][1]
+    fn = conf_matrix[1][0]
+    tn = conf_matrix[1][1]
+
+    precision = tp / (tp + fp)
+    recall = tp / (tp + fn)
+    specificity = tn / (tn + fp)
+    f1_score = 2 * (precision * recall) / (precision + recall)
+
+    # Imprimir las métricas
+    print('******************************** {} ********************************'.format('Métricas de rendimiento'))
+    print("Precision: ", precision)
+    print("Recall: ", recall)
+    print("Specificity: ", specificity)
+    print("F1-score: ", f1_score)
+
+    # Datos a graficar
+    metrics = ['Precision', 'Recall', 'Specificity', 'F1-score']
+    values = [precision, recall, specificity, f1_score]
+    # Crea el gráfico de barras
+    plt.bar(metrics, values)
+    # Personalizar el gráfico
+    plt.title('Métricas de rendimiento del modelo')
+    plt.xlabel('Métrica')
+    plt.ylabel('Valor')
+    # Mostrar el gráfico
+    # plt.show()
+
     # Evalúa la precisión del modelo de clasificación entrenado.
     accuracy = model.score(X_test, Y_test)
-    print('Precisión:', accuracy)
+    print('Precisión del modelo de clasificación entrenado:', accuracy)
 
     # Utiliza el modelo entrenado para ver si una nueva imagen es infectada o sana.
     def predict(img_path):
@@ -94,21 +144,29 @@ if __name__ == '__main__':
         img = cv2.imread(img_path)
         if img is None:
             raise ValueError(f"No se puede leer la imagen en {img_path}")
-
+        # Redimensiona la imágenes a un tamaño de 128x128 píxeles.
+        img = cv2.resize(img, (128, 128))
         # Extraer características
         feature_vector = extract_features(img)
         if feature_vector is None:
             raise ValueError("No se pueden extraer características de la imagen")
-
         # Normalizar características
         feature_vector = scaler.transform([feature_vector])
-
         # Realizar predicción
         prediction = model.predict(feature_vector)
-        print("Predicción: ", prediction)
+        print("Predicción: ", prediction[0])
         return prediction
 
+    print('************************* {} *************************'.format('Pruebas'))
     # Test hoja sana
     predict('dataset/pests/healthy-leaves/healthy-leaves (52).jpg')
+    predict('dataset/pests/healthy-leaves/healthy-leaves (1).jpg')
+    predict('dataset/pests/healthy-leaves/healthy-leaves (5).jpg')
+    predict('dataset/pests/healthy-leaves/healthy-leaves (18).jpg')
+    predict('dataset/pests/healthy-leaves/healthy-leaves (100).jpg')
     # Test hoja infectada
     predict('dataset/pests/ceramidia-viridis/ceramidia-viridis (10).jpg')
+    predict('dataset/pests/ceramidia-viridis/ceramidia-viridis (100).jpg')
+    predict('dataset/pests/ceramidia-viridis/ceramidia-viridis (5).jpg')
+    predict('dataset/pests/ceramidia-viridis/ceramidia-viridis (88).jpg')
+    predict('dataset/pests/ceramidia-viridis/ceramidia-viridis (70).jpg')
