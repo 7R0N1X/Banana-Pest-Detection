@@ -31,18 +31,19 @@ if __name__ == '__main__':
     print(f'Imágenes infectadas: {len(infected_images)}')
     print(f'Imágenes sanas: {len(healthy_images)}')
 
-    # Redimensiona las imágenes de plantas infectadas y sanas a un tamaño de 128x128 píxeles.
+    # Redimensiona las imágenes de plantas infectadas y sanas a un tamaño de 720x720 píxeles.
     for i in range(len(infected_images)):
-        infected_images[i] = cv2.resize(infected_images[i], (128, 128))
+        infected_images[i] = cv2.resize(infected_images[i], (720, 720))
     for i in range(len(healthy_images)):
-        healthy_images[i] = cv2.resize(healthy_images[i], (128, 128))
+        healthy_images[i] = cv2.resize(healthy_images[i], (720, 720))
 
     # Extrae características de las imágenes de plantas infectadas y sanas.
     def extract_features(img):
         # Convertir a escala de grises.
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.dilate(gray, None, iterations=1)
         # Aplicar umbral para destacar huecos.
-        _, threshold = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
+        _, threshold = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY)
         # Encontrar contornos de los huecos.
         contours, _ = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         counter = 0
@@ -53,7 +54,7 @@ if __name__ == '__main__':
             # Calcula el area del contorno.
             area = cv2.contourArea(cnt)
             # Verifica si el area del contorno cumple con las condiciones deseadas.
-            if 1 < area < 320:
+            if 20 < area < 700:
                 # Si cumple, aumenta el contador.
                 counter += 1
         # Agrega el contador al arreglo de caracteristicas.
@@ -144,8 +145,8 @@ if __name__ == '__main__':
         img = cv2.imread(img_path)
         if img is None:
             raise ValueError(f"No se puede leer la imagen en {img_path}")
-        # Redimensiona la imágenes a un tamaño de 128x128 píxeles.
-        img = cv2.resize(img, (128, 128))
+        # Redimensiona la imágenes a un tamaño de 720x720 píxeles.
+        img = cv2.resize(img, (720, 720))
         # Extraer características
         feature_vector = extract_features(img)
         if feature_vector is None:
@@ -159,14 +160,25 @@ if __name__ == '__main__':
 
     print('************************* {} *************************'.format('Pruebas'))
     # Test hoja sana
-    predict('dataset/pests/healthy-leaves/healthy-leaves (52).jpg')
-    predict('dataset/pests/healthy-leaves/healthy-leaves (1).jpg')
-    predict('dataset/pests/healthy-leaves/healthy-leaves (5).jpg')
-    predict('dataset/pests/healthy-leaves/healthy-leaves (18).jpg')
-    predict('dataset/pests/healthy-leaves/healthy-leaves (100).jpg')
+    print('Sanas')
+    predict('dataset/test/healthy-leaves/healthy-leaves (1).jpg')
+    predict('dataset/test/healthy-leaves/healthy-leaves (2).jpg')
+    predict('dataset/test/healthy-leaves/healthy-leaves (3).jpg')
+    predict('dataset/test/healthy-leaves/healthy-leaves (4).jpg')
+    predict('dataset/test/healthy-leaves/healthy-leaves (5).jpg')
+    predict('dataset/test/healthy-leaves/healthy-leaves (6).jpg')
+    predict('dataset/test/healthy-leaves/healthy-leaves (7).jpg')
+    predict('dataset/test/healthy-leaves/healthy-leaves (8).jpg')
+    predict('dataset/test/healthy-leaves/healthy-leaves (9).jpg')
+    predict('dataset/test/healthy-leaves/healthy-leaves (10).jpg')
+
     # Test hoja infectada
-    predict('dataset/pests/ceramidia-viridis/ceramidia-viridis (10).jpg')
-    predict('dataset/pests/ceramidia-viridis/ceramidia-viridis (100).jpg')
-    predict('dataset/pests/ceramidia-viridis/ceramidia-viridis (5).jpg')
-    predict('dataset/pests/ceramidia-viridis/ceramidia-viridis (88).jpg')
-    predict('dataset/pests/ceramidia-viridis/ceramidia-viridis (70).jpg')
+    print('Infectada')
+    predict('dataset/test/ceramidia-viridis/ceramidia-viridis (1).jpg')
+    predict('dataset/test/ceramidia-viridis/ceramidia-viridis (2).jpg')
+    predict('dataset/test/ceramidia-viridis/ceramidia-viridis (3).jpg')
+    predict('dataset/test/ceramidia-viridis/ceramidia-viridis (4).jpg')
+    predict('dataset/test/ceramidia-viridis/ceramidia-viridis (5).jpg')
+    predict('dataset/test/ceramidia-viridis/ceramidia-viridis (6).jpg')
+    predict('dataset/test/ceramidia-viridis/ceramidia-viridis (7).jpg')
+    predict('dataset/test/ceramidia-viridis/ceramidia-viridis (8).jpg')
