@@ -1,4 +1,4 @@
-###  Detección de ceramidia viridis en hojas de plátano
+##  Detección de ceramidia viridis en hojas de plátano
 Este proyecto busca detectar la plaga ceramidia viridis en hojas de plátano mediante el uso de aprendizaje automático. 
 
 ### Requisitos
