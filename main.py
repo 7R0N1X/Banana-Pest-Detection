@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     # Carga dos listas de imágenes, una con imágenes infectadas y otra con imágenes sanas.
-    creamidia_viridis = [f'dataset/pests/ceramidia-viridis/{img}' for img in os.listdir('dataset/pests/ceramidia-viridis')]
-    healthy_leaves = [f'dataset/pests/healthy-leaves/{img}' for img in os.listdir('dataset/pests/healthy-leaves')]
+    creamidia_viridis = [f'dataset/ceramidia-viridis/{img}' for img in os.listdir('dataset/ceramidia-viridis')]
+    healthy_leaves = [f'dataset/healthy-leaves/{img}' for img in os.listdir('dataset/healthy-leaves')]
 
     # Inicializar listas vacías para almacenar imágenes infectadas y sanas.
     infected_images = []
